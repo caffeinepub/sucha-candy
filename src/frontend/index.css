@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind utilities;
+@tailwind components;
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;700;900&display=swap');
+
+@layer base {
+  :root {
+    --radius: 0.625rem;
+    --background: 0.08 0 280;
+    --foreground: 0.98 0 0;
+    --card: 0.12 0.02 280;
+    --card-foreground: 0.98 0 0;
+    --popover: 0.12 0.02 280;
+    --popover-foreground: 0.98 0 0;
+    --primary: 0.75 0.18 320;
+    --primary-foreground: 0.98 0 0;
+    --secondary: 0.18 0.04 280;
+    --secondary-foreground: 0.98 0 0;
+    --muted: 0.18 0.02 280;
+    --muted-foreground: 0.55 0 0;
+    --accent: 0.22 0.05 280;
+    --accent-foreground: 0.98 0 0;
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+    --border: 1 0 0 / 12%;
+    --input: 1 0 0 / 15%;
+    --ring: 0.75 0.18 320;
+    --chart-1: 0.646 0.222 41.116;
+    --chart-2: 0.6 0.118 184.704;
+    --chart-3: 0.398 0.07 227.392;
+    --chart-4: 0.828 0.189 84.429;
+    --chart-5: 0.769 0.188 70.08;
+    --sidebar: 0.12 0.02 280;
+    --sidebar-foreground: 0.98 0 0;
+    --sidebar-primary: 0.75 0.18 320;
+    --sidebar-primary-foreground: 0.98 0 0;
+    --sidebar-accent: 0.18 0.04 280;
+    --sidebar-accent-foreground: 0.98 0 0;
+    --sidebar-border: 1 0 0 / 10%;
+    --sidebar-ring: 0.55 0 0;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  @keyframes fall-in {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+  }
+  @keyframes fall {
+    from { transform: translateY(-20px); }
+    to   { transform: translateY(0); }
+  }
+  @keyframes bounce-back {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(0.85); }
+    60%  { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+    5%   { opacity: 0.6; }
+    90%  { opacity: 0.5; }
+    100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+  }
+  .animate-fall-in  { animation: fall-in 0.35s ease-out; }
+  .animate-fall     { animation: fall 0.25s ease-out; }
+  .animate-bounce-back { animation: bounce-back 0.3s ease-in-out; }
+}
