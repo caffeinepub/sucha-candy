@@ -1,5 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { LEVELS } from "../game/constants";
+import type { GoalType } from "../game/types";
 
 interface Props {
   totalLevels: number;
@@ -10,6 +12,22 @@ interface Props {
 
 const CANDY_EMOJIS = ["🍒", "🍇", "🍓", "🍎", "🥭", "🍑"];
 const LEVELS_PER_PAGE = 30;
+
+const GOAL_ICON: Record<GoalType, string> = {
+  score: "🎯",
+  collect: "🍬",
+  special: "✨",
+};
+const GOAL_COLOR: Record<GoalType, string> = {
+  score: "#ffd700",
+  collect: "#ff88cc",
+  special: "#bb44ff",
+};
+const GOAL_LABEL: Record<GoalType, string> = {
+  score: "Score",
+  collect: "Collect",
+  special: "Special",
+};
 
 export const LevelSelectScreen: React.FC<Props> = ({
   totalLevels,
@@ -57,7 +75,7 @@ export const LevelSelectScreen: React.FC<Props> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: "1.5rem",
+          marginBottom: "1rem",
         }}
       >
         <button
@@ -75,9 +93,8 @@ export const LevelSelectScreen: React.FC<Props> = ({
             cursor: "pointer",
           }}
         >
-          ◀ Back
+          ◄ Back
         </button>
-
         <h2
           style={{
             margin: 0,
@@ -92,18 +109,41 @@ export const LevelSelectScreen: React.FC<Props> = ({
         >
           🍒 Choose Level
         </h2>
-
         <div style={{ width: "80px" }} />
       </div>
 
-      {/* Progress bar */}
+      {/* Goal legend */}
       <div
         style={{
-          width: "100%",
-          maxWidth: "600px",
-          marginBottom: "1.2rem",
+          display: "flex",
+          gap: "1.2rem",
+          marginBottom: "1rem",
+          padding: "0.5rem 1rem",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: "100px",
+          border: "1px solid rgba(255,255,255,0.08)",
         }}
       >
+        {(["score", "collect", "special"] as GoalType[]).map((g) => (
+          <span
+            key={g}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.3rem",
+              fontSize: "0.72rem",
+            }}
+          >
+            <span>{GOAL_ICON[g]}</span>
+            <span style={{ color: GOAL_COLOR[g], fontWeight: 700 }}>
+              {GOAL_LABEL[g]}
+            </span>
+          </span>
+        ))}
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ width: "100%", maxWidth: "600px", marginBottom: "1.2rem" }}>
         <div
           style={{
             display: "flex",
@@ -155,6 +195,9 @@ export const LevelSelectScreen: React.FC<Props> = ({
           const isUnlocked = levelIdx <= unlockedUpTo;
           const isCurrent = levelIdx === unlockedUpTo;
           const candy = CANDY_EMOJIS[levelIdx % CANDY_EMOJIS.length];
+          const goalType = LEVELS[levelIdx].goal.type;
+          const goalIcon = GOAL_ICON[goalType];
+          const goalColor = GOAL_COLOR[goalType];
 
           return (
             <button
@@ -169,13 +212,13 @@ export const LevelSelectScreen: React.FC<Props> = ({
                 border: isCurrent
                   ? "2px solid #ffd700"
                   : isUnlocked
-                    ? "1px solid rgba(255,150,200,0.3)"
+                    ? `1px solid ${goalColor}44`
                     : "1px solid rgba(255,255,255,0.06)",
                 borderRadius: "14px",
                 background: isCurrent
                   ? "linear-gradient(135deg, rgba(255,180,0,0.3), rgba(255,80,150,0.3))"
                   : isUnlocked
-                    ? "rgba(255,255,255,0.07)"
+                    ? `${goalColor}12`
                     : "rgba(255,255,255,0.03)",
                 color: isUnlocked ? "#fff" : "rgba(255,255,255,0.2)",
                 cursor: isUnlocked ? "pointer" : "not-allowed",
@@ -183,7 +226,7 @@ export const LevelSelectScreen: React.FC<Props> = ({
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "0.2rem",
+                gap: "0.1rem",
                 padding: "0.4rem",
                 transition: "transform 0.12s ease, background 0.12s ease",
                 boxShadow: isCurrent ? "0 0 16px rgba(255,200,0,0.4)" : "none",
@@ -195,29 +238,40 @@ export const LevelSelectScreen: React.FC<Props> = ({
                 e.currentTarget.style.transform = "scale(1)";
               }}
             >
-              <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>
+              <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>
                 {isUnlocked ? candy : "🔒"}
               </span>
               <span
                 style={{
-                  fontSize: "0.7rem",
+                  fontSize: "0.65rem",
                   fontWeight: 700,
                   opacity: isUnlocked ? 1 : 0.35,
                 }}
               >
                 {levelNum}
               </span>
+              {isUnlocked && (
+                <span
+                  style={{
+                    fontSize: "0.62rem",
+                    color: goalColor,
+                    lineHeight: 1,
+                  }}
+                >
+                  {goalIcon}
+                </span>
+              )}
               {isCurrent && (
                 <span
                   style={{
                     position: "absolute",
                     top: "-6px",
                     right: "-4px",
-                    fontSize: "0.65rem",
+                    fontSize: "0.58rem",
                     background: "#ffd700",
                     color: "#1a0033",
                     borderRadius: "100px",
-                    padding: "1px 5px",
+                    padding: "1px 4px",
                     fontWeight: 800,
                   }}
                 >
@@ -261,9 +315,8 @@ export const LevelSelectScreen: React.FC<Props> = ({
             fontSize: "0.85rem",
           }}
         >
-          ◀ Prev
+          ◄ Prev
         </button>
-
         <span
           style={{
             color: "rgba(255,200,255,0.5)",
@@ -274,7 +327,6 @@ export const LevelSelectScreen: React.FC<Props> = ({
         >
           {activePage + 1} / {totalPages}
         </span>
-
         <button
           type="button"
           data-ocid="levelselect.pagination_next"
@@ -297,7 +349,7 @@ export const LevelSelectScreen: React.FC<Props> = ({
             fontSize: "0.85rem",
           }}
         >
-          Next ▶
+          Next ►
         </button>
       </div>
     </div>

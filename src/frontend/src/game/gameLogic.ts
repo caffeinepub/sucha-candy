@@ -81,8 +81,6 @@ interface MatchGroup {
 
 export function findMatches(board: Board): MatchGroup[] {
   const groups: MatchGroup[] = [];
-
-  // Horizontal
   for (let r = 0; r < BOARD_SIZE; r++) {
     let c = 0;
     while (c < BOARD_SIZE) {
@@ -91,10 +89,9 @@ export function findMatches(board: Board): MatchGroup[] {
         c + len < BOARD_SIZE &&
         board[r][c + len].type === board[r][c].type &&
         !board[r][c].isEmpty
-      ) {
+      )
         len++;
-      }
-      if (len >= 3) {
+      if (len >= 3)
         groups.push({
           cells: Array.from({ length: len }, (_, i) => ({
             row: r,
@@ -102,12 +99,9 @@ export function findMatches(board: Board): MatchGroup[] {
           })),
           orientation: "horizontal",
         });
-      }
       c += len;
     }
   }
-
-  // Vertical
   for (let c = 0; c < BOARD_SIZE; c++) {
     let r = 0;
     while (r < BOARD_SIZE) {
@@ -116,10 +110,9 @@ export function findMatches(board: Board): MatchGroup[] {
         r + len < BOARD_SIZE &&
         board[r + len][c].type === board[r][c].type &&
         !board[r][c].isEmpty
-      ) {
+      )
         len++;
-      }
-      if (len >= 3) {
+      if (len >= 3)
         groups.push({
           cells: Array.from({ length: len }, (_, i) => ({
             row: r + i,
@@ -127,11 +120,9 @@ export function findMatches(board: Board): MatchGroup[] {
           })),
           orientation: "vertical",
         });
-      }
       r += len;
     }
   }
-
   return groups;
 }
 
@@ -139,48 +130,55 @@ export interface MatchResult {
   board: Board;
   score: number;
   hasMatches: boolean;
+  cellsCleared: number;
+  specialsCreated: number;
 }
 
 export function applyMatches(board: Board, combo: number): MatchResult {
   const groups = findMatches(board);
-  if (groups.length === 0) return { board, score: 0, hasMatches: false };
+  if (groups.length === 0)
+    return {
+      board,
+      score: 0,
+      hasMatches: false,
+      cellsCleared: 0,
+      specialsCreated: 0,
+    };
 
   const newBoard = cloneBoard(board);
   let score = 0;
+  let specialsCreated = 0;
   const comboMultiplier = Math.min(combo, 5);
-
   const matchedPositions = new Set<string>();
+  const newSpecialPositions = new Set<string>();
 
   for (const group of groups) {
     const len = group.cells.length;
     const baseScore = SCORE_PER_MATCH[Math.min(len, 5)] ?? SCORE_PER_MATCH[5];
     score += baseScore * comboMultiplier;
-
-    for (const pos of group.cells) {
+    for (const pos of group.cells)
       matchedPositions.add(`${pos.row},${pos.col}`);
-    }
-
-    // Handle specials created by matches
     if (len === 4) {
       const midPos = group.cells[Math.floor(len / 2)];
       const special: SpecialType =
         group.orientation === "horizontal" ? "striped-h" : "striped-v";
       newBoard[midPos.row][midPos.col].special = special;
+      newSpecialPositions.add(`${midPos.row},${midPos.col}`);
       matchedPositions.delete(`${midPos.row},${midPos.col}`);
+      specialsCreated++;
     } else if (len >= 5) {
       const midPos = group.cells[Math.floor(len / 2)];
       newBoard[midPos.row][midPos.col].special = "colorbomb";
+      newSpecialPositions.add(`${midPos.row},${midPos.col}`);
       matchedPositions.delete(`${midPos.row},${midPos.col}`);
+      specialsCreated++;
     }
   }
 
-  // Trigger specials in matched positions
   const toActivate: Position[] = [];
   for (const key of matchedPositions) {
     const [r, c] = key.split(",").map(Number);
-    if (newBoard[r][c].special !== "none") {
-      toActivate.push({ row: r, col: c });
-    }
+    if (newBoard[r][c].special !== "none") toActivate.push({ row: r, col: c });
   }
 
   for (const pos of toActivate) {
@@ -193,55 +191,51 @@ export function applyMatches(board: Board, combo: number): MatchResult {
       for (let r = 0; r < BOARD_SIZE; r++)
         matchedPositions.add(`${r},${pos.col}`);
     } else if (cell.special === "bomb") {
-      for (let dr = -1; dr <= 1; dr++) {
+      for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
           const nr = pos.row + dr;
           const nc = pos.col + dc;
-          if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+          if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE)
             matchedPositions.add(`${nr},${nc}`);
-          }
         }
-      }
     } else if (cell.special === "colorbomb") {
       const targetType = cell.type;
-      for (let r = 0; r < BOARD_SIZE; r++) {
-        for (let c = 0; c < BOARD_SIZE; c++) {
+      for (let r = 0; r < BOARD_SIZE; r++)
+        for (let c = 0; c < BOARD_SIZE; c++)
           if (newBoard[r][c].type === targetType)
             matchedPositions.add(`${r},${c}`);
-        }
-      }
     }
   }
 
-  // Mark all matched positions as matched (empty)
+  for (const key of newSpecialPositions) matchedPositions.delete(key);
+
   for (const key of matchedPositions) {
     const [r, c] = key.split(",").map(Number);
     newBoard[r][c].isMatched = true;
     newBoard[r][c].isEmpty = true;
   }
 
-  return { board: newBoard, score, hasMatches: true };
+  return {
+    board: newBoard,
+    score,
+    hasMatches: true,
+    cellsCleared: matchedPositions.size,
+    specialsCreated,
+  };
 }
 
 export function applyGravity(board: Board): Board {
   const newBoard = cloneBoard(board);
   for (let c = 0; c < BOARD_SIZE; c++) {
-    // Collect non-empty cells from bottom to top
     const column: Cell[] = [];
     for (let r = BOARD_SIZE - 1; r >= 0; r--) {
-      if (!newBoard[r][c].isEmpty) {
-        column.push({ ...newBoard[r][c] });
-      }
+      if (!newBoard[r][c].isEmpty) column.push({ ...newBoard[r][c] });
     }
-    // Fill from bottom
     for (let r = BOARD_SIZE - 1; r >= 0; r--) {
       const idx = BOARD_SIZE - 1 - r;
-      if (idx < column.length) {
+      if (idx < column.length)
         newBoard[r][c] = { ...column[idx], isFalling: true };
-      } else {
-        // New candy from top
-        newBoard[r][c] = { ...createCell(), isNew: true };
-      }
+      else newBoard[r][c] = { ...createCell(), isNew: true };
     }
   }
   return newBoard;
@@ -263,6 +257,7 @@ export interface SpecialComboResult {
   board: Board;
   score: number;
   isSpecialCombo: boolean;
+  cellsCleared: number;
 }
 
 export function applySpecialCombo(
@@ -272,28 +267,30 @@ export function applySpecialCombo(
 ): SpecialComboResult {
   const cellA = board[posA.row][posA.col];
   const cellB = board[posB.row][posB.col];
-
   const isColorBombA = cellA.special === "colorbomb";
   const isColorBombB = cellB.special === "colorbomb";
 
-  // Color Bomb + Color Bomb => clear entire board
   if (isColorBombA && isColorBombB) {
     const newBoard = cloneBoard(board);
-    for (let r = 0; r < BOARD_SIZE; r++) {
+    let cellsCleared = 0;
+    for (let r = 0; r < BOARD_SIZE; r++)
       for (let c = 0; c < BOARD_SIZE; c++) {
         newBoard[r][c].isMatched = true;
         newBoard[r][c].isEmpty = true;
+        cellsCleared++;
       }
-    }
-    return { board: newBoard, score: COMBO_BLAST_SCORE, isSpecialCombo: true };
+    return {
+      board: newBoard,
+      score: COMBO_BLAST_SCORE,
+      isSpecialCombo: true,
+      cellsCleared,
+    };
   }
 
-  // Color Bomb + Striped
   const isStripedA =
     cellA.special === "striped-h" || cellA.special === "striped-v";
   const isStripedB =
     cellB.special === "striped-h" || cellB.special === "striped-v";
-
   let colorBombPos: Position | null = null;
   let stripedPos: Position | null = null;
 
@@ -310,40 +307,30 @@ export function applySpecialCombo(
     const stripedCell = newBoard[stripedPos.row][stripedPos.col];
     const targetColor = stripedCell.type;
     const isHorizontal = stripedCell.special === "striped-h";
-
-    // Find all candies of that color and blast their row/column
     const toBlast = new Set<string>();
-
-    for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let r = 0; r < BOARD_SIZE; r++)
       for (let c = 0; c < BOARD_SIZE; c++) {
         if (newBoard[r][c].type === targetColor) {
-          // Mark the candy itself
           toBlast.add(`${r},${c}`);
-          // Also blast its entire row or column depending on striped orientation
-          if (isHorizontal) {
-            for (let cc = 0; cc < BOARD_SIZE; cc++) {
-              toBlast.add(`${r},${cc}`);
-            }
-          } else {
-            for (let rr = 0; rr < BOARD_SIZE; rr++) {
-              toBlast.add(`${rr},${c}`);
-            }
-          }
+          if (isHorizontal)
+            for (let cc = 0; cc < BOARD_SIZE; cc++) toBlast.add(`${r},${cc}`);
+          else
+            for (let rr = 0; rr < BOARD_SIZE; rr++) toBlast.add(`${rr},${c}`);
         }
       }
-    }
-
-    // Also mark the color bomb itself
     toBlast.add(`${colorBombPos.row},${colorBombPos.col}`);
-
     for (const key of toBlast) {
       const [r, c] = key.split(",").map(Number);
       newBoard[r][c].isMatched = true;
       newBoard[r][c].isEmpty = true;
     }
-
-    return { board: newBoard, score: COMBO_BLAST_SCORE, isSpecialCombo: true };
+    return {
+      board: newBoard,
+      score: COMBO_BLAST_SCORE,
+      isSpecialCombo: true,
+      cellsCleared: toBlast.size,
+    };
   }
 
-  return { board, score: 0, isSpecialCombo: false };
+  return { board, score: 0, isSpecialCombo: false, cellsCleared: 0 };
 }

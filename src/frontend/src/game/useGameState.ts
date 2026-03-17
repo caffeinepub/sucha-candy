@@ -23,7 +23,8 @@ type Action =
   | { type: "NEXT_LEVEL" }
   | { type: "RESTART" }
   | { type: "SET_COMBO"; combo: number }
-  | { type: "USE_BONUS_CHANCE" };
+  | { type: "USE_BONUS_CHANCE" }
+  | { type: "UPDATE_GOAL_PROGRESS"; amount: number };
 
 function initState(level = 0): GameState {
   return {
@@ -35,6 +36,7 @@ function initState(level = 0): GameState {
     phase: "playing",
     selectedCell: null,
     bonusChanceUsed: false,
+    goalProgress: 0,
   };
 }
 
@@ -64,13 +66,23 @@ function reducer(state: GameState, action: Action): GameState {
       return { ...state, board: action.board };
     case "ADD_SCORE": {
       const newScore = state.score + action.score;
-      const levelCfg = LEVELS[state.level];
-      if (newScore >= levelCfg.targetScore) {
+      const goal = LEVELS[state.level].goal;
+      if (goal.type === "score" && newScore >= goal.target) {
         if (state.level >= LEVELS.length - 1)
           return { ...state, score: newScore, phase: "win" };
         return { ...state, score: newScore, phase: "levelcomplete" };
       }
       return { ...state, score: newScore };
+    }
+    case "UPDATE_GOAL_PROGRESS": {
+      const newProgress = state.goalProgress + action.amount;
+      const goal = LEVELS[state.level].goal;
+      if (goal.type !== "score" && newProgress >= goal.target) {
+        if (state.level >= LEVELS.length - 1)
+          return { ...state, goalProgress: newProgress, phase: "win" };
+        return { ...state, goalProgress: newProgress, phase: "levelcomplete" };
+      }
+      return { ...state, goalProgress: newProgress };
     }
     case "DECREMENT_MOVES": {
       const newMoves = state.moves - 1;
@@ -119,34 +131,40 @@ export function useGameState() {
       let board = initialBoard;
       let combo = 1;
       let totalScore = 0;
+      let totalCellsCleared = 0;
+      let totalSpecialsCreated = 0;
 
       for (let i = 0; i < 10; i++) {
         const result = applyMatches(board, combo);
         if (!result.hasMatches) break;
-
         dispatch({ type: "SET_BOARD", board: result.board });
         await delay(350);
-
         totalScore += result.score;
+        totalCellsCleared += result.cellsCleared;
+        totalSpecialsCreated += result.specialsCreated;
         combo++;
-
         board = applyGravity(result.board);
         dispatch({ type: "SET_BOARD", board });
         await delay(400);
-
         board = clearFlags(board);
         dispatch({ type: "SET_BOARD", board });
         await delay(100);
       }
 
       dispatch({ type: "ADD_SCORE", score: totalScore });
+
+      const goal = LEVELS[currentLevel].goal;
+      if (goal.type === "collect") {
+        dispatch({ type: "UPDATE_GOAL_PROGRESS", amount: totalCellsCleared });
+      } else if (goal.type === "special") {
+        dispatch({
+          type: "UPDATE_GOAL_PROGRESS",
+          amount: totalSpecialsCreated,
+        });
+      }
+
       dispatch({ type: "DECREMENT_MOVES" });
-
-      setTimeout(() => {
-        dispatch({ type: "SET_PHASE", phase: "playing" });
-      }, 0);
-
-      void currentLevel;
+      setTimeout(() => dispatch({ type: "SET_PHASE", phase: "playing" }), 0);
     },
     [],
   );
@@ -183,22 +201,24 @@ export function useGameState() {
       dispatch({ type: "SET_BOARD", board: swapped });
       await delay(300);
 
-      // Check for special combo (Color Bomb + Striped, or Color Bomb + Color Bomb)
       const comboResult = applySpecialCombo(swapped, prev, pos);
       if (comboResult.isSpecialCombo) {
         dispatch({ type: "SET_BOARD", board: comboResult.board });
         await delay(400);
-
         const afterGravity = applyGravity(comboResult.board);
         dispatch({ type: "SET_BOARD", board: afterGravity });
         await delay(400);
-
         const cleaned = clearFlags(afterGravity);
         dispatch({ type: "SET_BOARD", board: cleaned });
-        dispatch({ type: "ADD_SCORE", score: comboResult.score }); // +100 combo bonus
+        dispatch({ type: "ADD_SCORE", score: comboResult.score });
+        const goal = LEVELS[state.level].goal;
+        if (goal.type === "collect") {
+          dispatch({
+            type: "UPDATE_GOAL_PROGRESS",
+            amount: comboResult.cellsCleared,
+          });
+        }
         await delay(100);
-
-        // Then cascade for any new matches
         await processCascade(cleaned, state.level);
         return;
       }

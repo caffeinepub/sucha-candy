@@ -1,4 +1,4 @@
-import type { CandyType, LevelConfig } from "./types";
+import type { CandyType, LevelConfig, LevelGoal } from "./types";
 
 export const BOARD_SIZE = 8;
 
@@ -38,10 +38,24 @@ export const CANDY_BG: Record<CandyType, string> = {
   purple: "bg-purple-500",
 };
 
+function getLevelGoal(i: number): LevelGoal {
+  if (i < 20) return { type: "score", target: Math.round(500 * 1.035 ** i) };
+  const pattern = (i - 20) % 3;
+  if (pattern === 0)
+    return { type: "score", target: Math.round(500 * 1.035 ** i) };
+  if (pattern === 1)
+    return {
+      type: "collect",
+      target: Math.min(30 + Math.floor(i / 8) * 5, 180),
+    };
+  return { type: "special", target: Math.min(2 + Math.floor(i / 40), 10) };
+}
+
 export const LEVELS: LevelConfig[] = Array.from({ length: 500 }, (_, i) => ({
   level: i + 1,
   targetScore: Math.round(500 * 1.035 ** i),
   moves: Math.max(10, 20 - Math.floor(i / 25)),
+  goal: getLevelGoal(i),
 }));
 
 export const SCORE_PER_MATCH: Record<number, number> = {

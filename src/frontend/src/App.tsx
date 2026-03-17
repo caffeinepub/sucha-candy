@@ -23,12 +23,9 @@ export default function App() {
   } = useGameState();
 
   useEffect(() => {
-    if (screen === "playing") {
-      checkGameOver();
-    }
+    if (screen === "playing") checkGameOver();
   }, [checkGameOver, screen]);
 
-  // Track unlocked levels
   useEffect(() => {
     if (state.phase === "levelcomplete" || state.phase === "win") {
       setUnlockedUpTo((prev) => Math.max(prev, state.level + 1));
@@ -40,9 +37,8 @@ export default function App() {
     setScreen("home");
   };
 
-  if (screen === "home") {
+  if (screen === "home")
     return <HomeScreen onStart={() => setScreen("levelselect")} />;
-  }
 
   if (screen === "levelselect") {
     return (
@@ -96,7 +92,7 @@ export default function App() {
             e.currentTarget.style.background = "rgba(255,255,255,0.08)";
           }}
         >
-          ◀ Levels
+          ◄ Levels
         </button>
 
         <h1
@@ -147,6 +143,7 @@ export default function App() {
           moves={state.moves}
           level={state.level}
           combo={state.combo}
+          goalProgress={state.goalProgress}
         />
       </div>
 

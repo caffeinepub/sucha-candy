@@ -12,6 +12,13 @@ export type SpecialType =
   | "bomb"
   | "colorbomb";
 
+export type GoalType = "score" | "collect" | "special";
+
+export interface LevelGoal {
+  type: GoalType;
+  target: number;
+}
+
 export interface Cell {
   id: number;
   type: CandyType;
@@ -34,6 +41,7 @@ export interface LevelConfig {
   level: number;
   targetScore: number;
   moves: number;
+  goal: LevelGoal;
 }
 
 export type GamePhase =
@@ -52,4 +60,5 @@ export interface GameState {
   phase: GamePhase;
   selectedCell: Position | null;
   bonusChanceUsed: boolean;
+  goalProgress: number;
 }
