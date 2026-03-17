@@ -1,6 +1,7 @@
 import {
   BOARD_SIZE,
   CANDY_TYPES,
+  COMBO_BLAST_SCORE,
   SCORE_PER_MATCH,
   SPECIAL_SCORE,
 } from "./constants";
@@ -256,4 +257,93 @@ export function clearFlags(board: Board): Board {
       isSelected: false,
     })),
   );
+}
+
+export interface SpecialComboResult {
+  board: Board;
+  score: number;
+  isSpecialCombo: boolean;
+}
+
+export function applySpecialCombo(
+  board: Board,
+  posA: Position,
+  posB: Position,
+): SpecialComboResult {
+  const cellA = board[posA.row][posA.col];
+  const cellB = board[posB.row][posB.col];
+
+  const isColorBombA = cellA.special === "colorbomb";
+  const isColorBombB = cellB.special === "colorbomb";
+
+  // Color Bomb + Color Bomb => clear entire board
+  if (isColorBombA && isColorBombB) {
+    const newBoard = cloneBoard(board);
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        newBoard[r][c].isMatched = true;
+        newBoard[r][c].isEmpty = true;
+      }
+    }
+    return { board: newBoard, score: COMBO_BLAST_SCORE, isSpecialCombo: true };
+  }
+
+  // Color Bomb + Striped
+  const isStripedA =
+    cellA.special === "striped-h" || cellA.special === "striped-v";
+  const isStripedB =
+    cellB.special === "striped-h" || cellB.special === "striped-v";
+
+  let colorBombPos: Position | null = null;
+  let stripedPos: Position | null = null;
+
+  if (isColorBombA && isStripedB) {
+    colorBombPos = posA;
+    stripedPos = posB;
+  } else if (isColorBombB && isStripedA) {
+    colorBombPos = posB;
+    stripedPos = posA;
+  }
+
+  if (colorBombPos !== null && stripedPos !== null) {
+    const newBoard = cloneBoard(board);
+    const stripedCell = newBoard[stripedPos.row][stripedPos.col];
+    const targetColor = stripedCell.type;
+    const isHorizontal = stripedCell.special === "striped-h";
+
+    // Find all candies of that color and blast their row/column
+    const toBlast = new Set<string>();
+
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (newBoard[r][c].type === targetColor) {
+          // Mark the candy itself
+          toBlast.add(`${r},${c}`);
+          // Also blast its entire row or column depending on striped orientation
+          if (isHorizontal) {
+            for (let cc = 0; cc < BOARD_SIZE; cc++) {
+              toBlast.add(`${r},${cc}`);
+            }
+          } else {
+            for (let rr = 0; rr < BOARD_SIZE; rr++) {
+              toBlast.add(`${rr},${c}`);
+            }
+          }
+        }
+      }
+    }
+
+    // Also mark the color bomb itself
+    toBlast.add(`${colorBombPos.row},${colorBombPos.col}`);
+
+    for (const key of toBlast) {
+      const [r, c] = key.split(",").map(Number);
+      newBoard[r][c].isMatched = true;
+      newBoard[r][c].isEmpty = true;
+    }
+
+    return { board: newBoard, score: COMBO_BLAST_SCORE, isSpecialCombo: true };
+  }
+
+  return { board, score: 0, isSpecialCombo: false };
 }

@@ -8,7 +8,7 @@ interface Props {
   onBack: () => void;
 }
 
-const CANDY_EMOJIS = ["🍬", "🍊", "🍋", "🍏", "🫐", "🍇"];
+const CANDY_EMOJIS = ["🍒", "🍇", "🍓", "🍎", "🥭", "🍑"];
 const LEVELS_PER_PAGE = 30;
 
 export const LevelSelectScreen: React.FC<Props> = ({
@@ -90,7 +90,7 @@ export const LevelSelectScreen: React.FC<Props> = ({
             filter: "drop-shadow(0 0 10px rgba(255,150,200,0.4))",
           }}
         >
-          🍬 Choose Level
+          🍒 Choose Level
         </h2>
 
         <div style={{ width: "80px" }} />

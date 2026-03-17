@@ -22,7 +22,7 @@ export const CandyCell: React.FC<Props> = ({ cell, onClick }) => {
   const innerClasses = [
     "relative w-full h-full rounded-xl flex items-center justify-center select-none",
     "transition-all duration-200 pointer-events-none",
-    cell.isMatched ? "scale-0 opacity-0" : "scale-100 opacity-100",
+    cell.isMatched ? "candy-blast" : "scale-100 opacity-100",
     cell.isSelected ? "ring-4 ring-white ring-offset-2 scale-110 z-10" : "",
     cell.isNew ? "animate-fall-in" : "",
     cell.isFalling ? "animate-fall" : "",

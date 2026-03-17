@@ -3,6 +3,7 @@ import { LEVELS } from "./constants";
 import {
   applyGravity,
   applyMatches,
+  applySpecialCombo,
   clearFlags,
   cloneBoard,
   createBoard,
@@ -181,6 +182,26 @@ export function useGameState() {
       const swapped = swapCells(clearedBoard, prev, pos);
       dispatch({ type: "SET_BOARD", board: swapped });
       await delay(300);
+
+      // Check for special combo (Color Bomb + Striped, or Color Bomb + Color Bomb)
+      const comboResult = applySpecialCombo(swapped, prev, pos);
+      if (comboResult.isSpecialCombo) {
+        dispatch({ type: "SET_BOARD", board: comboResult.board });
+        await delay(400);
+
+        const afterGravity = applyGravity(comboResult.board);
+        dispatch({ type: "SET_BOARD", board: afterGravity });
+        await delay(400);
+
+        const cleaned = clearFlags(afterGravity);
+        dispatch({ type: "SET_BOARD", board: cleaned });
+        dispatch({ type: "ADD_SCORE", score: comboResult.score }); // +100 combo bonus
+        await delay(100);
+
+        // Then cascade for any new matches
+        await processCascade(cleaned, state.level);
+        return;
+      }
 
       const testResult = applyMatches(swapped, 1);
       if (!testResult.hasMatches) {

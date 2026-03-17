@@ -12,11 +12,11 @@ export const CANDY_TYPES: CandyType[] = [
 ];
 
 export const CANDY_EMOJI: Record<CandyType, string> = {
-  red: "🍬",
-  orange: "🍊",
-  yellow: "🍋",
-  green: "🍏",
-  blue: "🫐",
+  red: "🍒",
+  orange: "🥭",
+  yellow: "🍓",
+  green: "🍎",
+  blue: "🍑",
   purple: "🍇",
 };
 
@@ -45,9 +45,10 @@ export const LEVELS: LevelConfig[] = Array.from({ length: 500 }, (_, i) => ({
 }));
 
 export const SCORE_PER_MATCH: Record<number, number> = {
-  3: 60,
-  4: 120,
-  5: 200,
+  3: 20,
+  4: 50,
+  5: 80,
 };
 
 export const SPECIAL_SCORE = 500;
+export const COMBO_BLAST_SCORE = 100;

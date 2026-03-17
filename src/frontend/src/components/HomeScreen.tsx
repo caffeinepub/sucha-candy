@@ -5,7 +5,7 @@ interface Props {
   onStart: () => void;
 }
 
-const CANDY_EMOJIS = ["🍬", "🍊", "🍋", "🍏", "🫐", "🍇", "🍭", "🍫", "🍡"];
+const CANDY_EMOJIS = ["🍒", "🍇", "🍓", "🍎", "🥭", "🍑"];
 
 interface FloatingCandy {
   id: number;
@@ -156,7 +156,7 @@ export const HomeScreen: React.FC<Props> = ({ onStart }) => {
               fontFamily: "'Bricolage Grotesque', sans-serif",
             }}
           >
-            🍬 Sucha
+            🍒 Sucha
           </h1>
           <h1
             style={{
@@ -197,7 +197,7 @@ export const HomeScreen: React.FC<Props> = ({ onStart }) => {
             filter: "drop-shadow(0 0 10px rgba(255,200,100,0.5))",
           }}
         >
-          🍬🍊🍋🍏🫐🍇
+          🍒🍇🍓🍎🥭🍑
         </div>
 
         {/* Start button */}
